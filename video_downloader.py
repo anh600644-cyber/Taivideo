@@ -147,6 +147,32 @@ def format_duration(seconds):
 # Nhận diện nền tảng
 # ──────────────────────────────────────────────────────────────
 
+def normalize_url(url):
+    """
+    Chuẩn hoá URL từ các dạng URL chia sẻ / trang cá nhân.
+    Ví dụ: link trang cá nhân Douyin có modal_id=123456789 -> https://www.douyin.com/video/123456789
+    """
+    if not url:
+        return url
+    url = url.strip()
+
+    # Douyin / TikTok modal_id (trang cá nhân mở video modal)
+    match_modal = re.search(r'[?&]modal_id=(\d+)', url)
+    if match_modal:
+        video_id = match_modal.group(1)
+        if "douyin.com" in url.lower():
+            return f"https://www.douyin.com/video/{video_id}"
+        elif "tiktok.com" in url.lower():
+            return f"https://www.tiktok.com/@video/video/{video_id}"
+
+    # Douyin share/video/123...
+    match_share = re.search(r'iesdouyin\.com/share/video/(\d+)', url)
+    if match_share:
+        return f"https://www.douyin.com/video/{match_share.group(1)}"
+
+    return url
+
+
 def detect_platform(url):
     """
     Nhận diện nền tảng từ URL.
@@ -311,6 +337,7 @@ class VideoDownloader:
         Returns:
             Dict chứa thông tin video, hoặc None nếu thất bại.
         """
+        url = normalize_url(url)
         platform_key, platform_info = detect_platform(url)
         opts = self._get_base_opts()
         opts.update(self._get_platform_opts(platform_key))
@@ -364,6 +391,11 @@ class VideoDownloader:
         Returns:
             True nếu tải thành công, False nếu thất bại.
         """
+        raw_url = url
+        url = normalize_url(url)
+        if url != raw_url:
+            print_info(f"Đã chuẩn hóa URL: {url}")
+
         platform_key, platform_info = detect_platform(url)
 
         if platform_info:
@@ -399,9 +431,11 @@ class VideoDownloader:
             print()
             print_error(f"Lỗi tải video: {e}")
             if platform_key == "bilibili":
-                print_warning("Mẹo: Video Bilibili có thể cần cookies. Dùng --cookies <file>")
-            elif platform_key in ("tiktok", "douyin"):
-                print_warning("Mẹo: Hãy thử dùng URL gốc (không rút gọn).")
+                print_warning("Mẹo: Video Bilibili có thể cần cookies. Dùng --cookies cookies.txt")
+            elif platform_key == "douyin":
+                print_warning("Mẹo: Douyin yêu cầu cookies (chống bot ByteDance). Hãy dùng tiện ích 'Get cookies.txt LOCALLY' xuất cookies.txt từ douyin.com và chạy với: --cookies cookies.txt")
+            elif platform_key == "tiktok":
+                print_warning("Mẹo: Hãy thử dùng URL gốc dạng https://www.tiktok.com/@user/video/...")
             return False
 
         except KeyboardInterrupt:
