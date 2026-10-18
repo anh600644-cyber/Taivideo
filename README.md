@@ -61,8 +61,8 @@ sudo apt update && sudo apt install ffmpeg
 ### 1. Clone code về máy
 
 ```bash
-git clone https://github.com/<your-username>/video-downloader-cli.git
-cd video-downloader-cli
+git clone https://github.com/anh600644-cyber/Taivideo.git
+cd Taivideo
 ```
 
 ### 2. Tạo môi trường ảo (khuyến nghị)
